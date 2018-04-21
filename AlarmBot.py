@@ -15,6 +15,7 @@ import io
 import re
 from time import strptime
 from datetime import timedelta, datetime
+from pytz import timezone
 
 OPUS_LIBS = ['libopus-0.x86.dll', 'libopus-0.x64.dll',
              'libopus-0.dll', 'libopus.so.0', 'libopus.0.dylib']
@@ -165,7 +166,7 @@ def isTimeFormat(input):
 def deltaInSeconds(time):
     x = strptime(time, "%H:%M")
     xToSec = timedelta(hours=x.tm_hour, minutes=x.tm_min).total_seconds()
-    now = datetime.now()
+    now = datetime.now(timezone("Europe/Oslo"))
     nowSeconds = now.hour*3600+now.minute*60+now.second
     # hvis tid er utenfor døgn, pluss på remaining time av døgnet
     return xToSec-nowSeconds if xToSec > nowSeconds else xToSec+(24*3600-nowSeconds)
