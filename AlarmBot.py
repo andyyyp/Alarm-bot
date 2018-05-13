@@ -51,6 +51,8 @@ client = Bot(description="Alarm Bot by All Meta",
 voice = None
 player = None
 waiting = False
+
+inVoice=False
 # options
 
 
@@ -95,17 +97,17 @@ async def alarm(ttime, url):
         await asyncio.sleep(int(x))
         await alarmStart(url)
     else:
-        await client.say("Already connected to a channel!")
+        await client.say("An alarm is already set.")
 
 
 @client.command()
 async def stop(*args):
-    if(client.is_voice_connected(client.get_server("334118303658147850"))):
+    global inVoice
+    if(inVoice):
         await voice.disconnect()
         player.stop()
+        inVoice=False
         await client.say("Alarm off.")
-    else:
-        await client.say("Alarm off")
 
 
 @client.command()
@@ -137,15 +139,15 @@ async def channel(ctx):
 
 
 async def alarmStart(url):
-	global voice
-	if config["options"]["channel"] is not None:
-		voice = await client.join_voice_channel(client.get_channel(config["options"]["channel"]))
-	else:
-		voice = await client.join_voice_channel(client.get_channel("373999277292257300"))
-
-	global player
-	player = await voice.create_ytdl_player(url)
-	player.start()
+    global voice, inVoice, player, waiting
+    if config["options"]["channel"] is not None:
+        voice = await client.join_voice_channel(client.get_channel(config["options"]["channel"]))
+    else:
+        voice = await client.join_voice_channel(client.get_channel("373999277292257300"))
+    inVoice=True
+    waiting=False
+    player = await voice.create_ytdl_player(url)
+    player.start()
 
 
 def writeToConfig():
