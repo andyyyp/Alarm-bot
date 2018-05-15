@@ -51,8 +51,7 @@ client = Bot(description="Alarm Bot by All Meta",
 voice = None
 player = None
 waiting = False
-
-inVoice=False
+inVoice = False
 # options
 
 
@@ -70,9 +69,6 @@ async def on_ready():
     print('Use this link to invite {}:'.format(client.user.name))
     print('https://discordapp.com/oauth2/authorize?client_id={}&scope=bot&permissions=8'.format(client.user.id))
     print('--------')
-    # Do not change this. This will really help us support you, if you need support.
-    print('You are running BasicBot v2.1')
-    print('Created by Habchy#1665')
 
     # This is buggy, let us know if it doesn't work.
     return await client.change_presence(game=discord.Game(name='?help'))
@@ -87,32 +83,39 @@ async def ping(*args):
 
 
 @client.command()
-async def alarm(ttime, url):
-    global waiting
-    if(not waiting):
-        waiting = True
-        await client.say("Alarm set to %s in the nearest future!" % (ttime))
-        x = deltaInSeconds(ttime)
-        print(x)
-        await asyncio.sleep(int(x))
-        await alarmStart(url)
+async def alarm(ttime=config["options"]["time"], url=config["options"]["song"]):
+    global waiting, inVoice
+    if inVoice:
+        await client.say("Stop the alarm first!")
+    elif(not waiting):
+        if(url.startswith("https://www.youtube.com/watch?v") or url.startswith("https://youtu.be/")):
+            waiting = True
+            await client.say("Alarm set to %s in the nearest future!" % (ttime))
+            x = deltaInSeconds(ttime)
+            print("Alarm in {}".format(SecondsToTime(x)))
+            await asyncio.sleep(int(x))
+            await alarmStart(url)
+        else:
+            await client.say("Invalid URL!")
     else:
         await client.say("An alarm is already set.")
 
 
 @client.command()
 async def stop(*args):
-    global inVoice
+    global inVoice, waiting
     if(inVoice):
         await voice.disconnect()
         player.stop()
-        inVoice=False
-        await client.say("Alarm off.")
+        inVoice = False
+        await client.say("Alarm turned off.")
+    else:
+        await client.say("Alarm not playing." if not waiting else "Not possible to cancel alarm rip.")
 
 
 @client.command()
 async def song(song):
-    if(song.startswith("https://www.youtube.com/watch?")):
+    if(song.startswith("https://www.youtube.com/watch?v") or song.startswith("https://youtu.be/")):
         await client.say("Default song set!")
         config["options"]["song"] = song
         writeToConfig()
@@ -144,8 +147,8 @@ async def alarmStart(url):
         voice = await client.join_voice_channel(client.get_channel(config["options"]["channel"]))
     else:
         voice = await client.join_voice_channel(client.get_channel("373999277292257300"))
-    inVoice=True
-    waiting=False
+    inVoice = True
+    waiting = False
     player = await voice.create_ytdl_player(url)
     player.start()
 
@@ -172,6 +175,10 @@ def deltaInSeconds(time):
     nowSeconds = now.hour*3600+now.minute*60+now.second
     # hvis tid er utenfor døgn, pluss på remaining time av døgnet
     return xToSec-nowSeconds if xToSec > nowSeconds else xToSec+(24*3600-nowSeconds)
+
+
+def SecondsToTime(x):
+    return str(datetime.timedelta(seconds=x))
 
 
 client.run(config["token"])
